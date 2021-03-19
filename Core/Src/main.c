@@ -32,6 +32,8 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include "tx_api.h"
+#include "stm32l4s5i_iot01_accelero.h"
+#include "stm32l4s5i_iot01_tsensor.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -58,14 +60,17 @@
 /* USER CODE BEGIN PV */
 TX_THREAD thread_0;
 TX_THREAD thread_1;
+TX_THREAD thread_2;
 TX_BYTE_POOL byte_pool_0;
 TX_MUTEX mtx_led;
 TX_EVENT_FLAGS_GROUP event_flags_0;
 TX_BLOCK_POOL block_pool_0;
 UCHAR memory_area[BYTE_POOL_SIZE];
 
-_Noreturn void thread_blink(ULONG thread_input);
-void thread_handle_button(ULONG thread_input);
+_Noreturn void blink_PA_5(ULONG thread_input);
+_Noreturn void blink_PB_14(ULONG thread_input);
+_Noreturn void read_temperature_sensor(ULONG thread_input);
+_Noreturn void read_accelerometer(ULONG thread_input);
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -100,46 +105,85 @@ void tx_application_define(void* first_unused_memory) {
     tx_byte_pool_create(&byte_pool_0, "byte pool 0", memory_area, BYTE_POOL_SIZE);
 
     tx_byte_allocate(&byte_pool_0, (VOID **) &pointer, STACK_SIZE, TX_NO_WAIT);
-    status = tx_thread_create(&thread_0, "thread 0", thread_blink, 1,
+    status = tx_thread_create(&thread_0, "thread 0", blink_PA_5, 1,
                               pointer, STACK_SIZE,
                               1, 1, TX_NO_TIME_SLICE, TX_AUTO_START);
     if (status != TX_SUCCESS)
-    {
         printf("thread creation failed\r\n");
-    }
 
     tx_byte_allocate(&byte_pool_0, (VOID **) &pointer, STACK_SIZE, TX_NO_WAIT);
-    status = tx_thread_create(&thread_1, "thread 1", thread_blink, 2,
+    status = tx_thread_create(&thread_1, "thread 1", blink_PB_14, 2,
                               pointer, STACK_SIZE,
                               1, 1, TX_NO_TIME_SLICE, TX_AUTO_START);
     if (status != TX_SUCCESS)
-    {
         printf("thread creation failed\r\n");
-    }
 
+    tx_byte_allocate(&byte_pool_0, (VOID **) &pointer, STACK_SIZE, TX_NO_WAIT);
+    status = tx_thread_create(&thread_2, "thread 2", read_temperature_sensor, 2,
+                              pointer, STACK_SIZE,
+                              1, 1, TX_NO_TIME_SLICE, TX_AUTO_START);
+    if (status != TX_SUCCESS)
+        printf("thread creation failed\r\n");
 }
 
 /**
- * @brief thread that blinks at 1 second interval.
- * @param thread_input
+ * @brief thread that blinks PA5 at given interval.
+ * @param thread_input: interval in seconds of blinking at 50% duty cycle
  */
-_Noreturn void thread_blink(ULONG thread_input) {
-    unsigned int status;
+_Noreturn void blink_PA_5(ULONG thread_input) {
+    uint32_t ticks_duty_cycle = (thread_input * 100) / 2;  // thread_input is in seconds, 100 ticks/second
     while (1) {
-        if (thread_input == 1) {
-            HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
-            tx_thread_sleep(50);  // this is in ticks, which is default 100 per second.
-            HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-            tx_thread_sleep(50);
-        }
-        if (thread_input == 2) {
-            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
-            tx_thread_sleep(50);  // this is in ticks, which is default 100 per second.
-            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_RESET);
-            tx_thread_sleep(50);
-        }
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+        tx_thread_sleep(ticks_duty_cycle);  // this is in ticks, which is default 100 per second.
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+        tx_thread_sleep(ticks_duty_cycle);
     }
+}
 
+/**
+ * @brief thread that blinks PB14 at given interval.
+ * @param thread_input: interval in seconds of blinking at 50% duty cycle
+ */
+_Noreturn void blink_PB_14(ULONG thread_input) {
+    uint32_t period_ticks = (thread_input * 100) / 2;  // thread_input is in seconds, 100 ticks/second
+    while(1) {
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
+        tx_thread_sleep(period_ticks);  // this is in ticks, which is default 100 per second.
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_RESET);
+        tx_thread_sleep(period_ticks);
+    }
+}
+
+/**
+ * @brief thread that reads the temperature sensor value at given interval
+ * @param thread_input: interval in seconds to read the tsensor
+ */
+_Noreturn void read_temperature_sensor(ULONG thread_input) {
+    uint32_t period_ticks = (thread_input * 100);  // thread_input is in seconds, 100 ticks/second
+    float temperature;
+    BSP_TSENSOR_Init();
+    while (1) {
+        tx_thread_sleep(period_ticks);
+        temperature = BSP_TSENSOR_ReadTemp();
+        printf("%f", temperature);
+    }
+}
+
+/**
+ * @brief thread that reads the accelerometer XYZ at given interval
+ * @param thread_input: interval in seconds to read the tsensor
+ */
+_Noreturn void read_accelerometer(ULONG thread_input) {
+    uint32_t period_ticks = (thread_input * 100);  // thread_input is in seconds, 100 ticks/second
+    int16_t current_xyz[3];
+    ACCELERO_StatusTypeDef xl_status = BSP_ACCELERO_Init();
+    if (xl_status != ACCELERO_OK)
+        printf("ERROR!");
+    while (1) {
+        tx_thread_sleep(period_ticks);
+        BSP_ACCELERO_AccGetXYZ(current_xyz);
+        printf("X: %d, Y: %d, Z: %d", current_xyz[0], current_xyz[1], current_xyz[2]);
+    }
 }
 
 /* USER CODE END 0 */

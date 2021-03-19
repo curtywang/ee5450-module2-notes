@@ -21,7 +21,7 @@ include(threadx/cmake/utilities.cmake)
 set(TX_USER_FILE "${CMAKE_SOURCE_DIR}/Core/Inc/tx_user.h" CACHE STRING "Enable TX user configuration")
 
 # project settings
-project(ee5450-module2-notes C CXX ASM)
+project(ee5450-module2-hw0 C CXX ASM)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD 11)
 
@@ -53,7 +53,7 @@ else ()
     add_compile_options(-Og -g)
 endif ()
 
-include_directories(Core/Inc Drivers/STM32L4xx_HAL_Driver/Inc Drivers/STM32L4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32L4xx/Include Drivers/CMSIS/Include)
+include_directories(Core/Inc Drivers/STM32L4xx_HAL_Driver/Inc Drivers/STM32L4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32L4xx/Include Drivers/CMSIS/Include Drivers/BSP/B-L4S5I-IOT01)
 
 # include ThreadX subdirectories
 add_subdirectory(${CMAKE_SOURCE_DIR}/threadx threadx)
