@@ -23,6 +23,7 @@
 #include "dfsdm.h"
 #include "i2c.h"
 #include "octospi.h"
+#include "rng.h"
 #include "spi.h"
 #include "usart.h"
 #include "usb_otg.h"
@@ -32,8 +33,10 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include "tx_api.h"
+#include "cmsis_utils.h"
 #include "stm32l4s5i_iot01_accelero.h"
 #include "stm32l4s5i_iot01_tsensor.h"
+#include "wifi.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,8 +51,8 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 /* USER CODE BEGIN PTD */
-#define STACK_SIZE 1024
-#define BYTE_POOL_SIZE 9120
+#define STACK_SIZE 4096
+#define BYTE_POOL_SIZE 32768
 #define BLOCK_POOL_SIZE 100
 #define QUEUE_SIZE 100
 #define EVT_BUTTON_PRESSED 0x1
@@ -90,6 +93,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     if (GPIO_Pin == GPIO_PIN_13) {
         tx_event_flags_set(&event_flags_0, EVT_BUTTON_PRESSED, TX_OR);
     }
+    else if (GPIO_Pin == GPIO_PIN_1) {
+        SPI_WIFI_ISR();
+    }
+}
+
+void SPI3_IRQHandler(void)
+{
+    HAL_SPI_IRQHandler(&hspi);
 }
 
 
@@ -100,6 +111,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 void tx_application_define(void* first_unused_memory) {
     char* pointer = TX_NULL;
     unsigned int status;
+
+    systick_interval_set(TX_TIMER_TICKS_PER_SECOND);
 
     tx_event_flags_create(&event_flags_0, "event flags 0");
 
@@ -140,6 +153,12 @@ void tx_application_define(void* first_unused_memory) {
  */
 _Noreturn void blink_PA_5(ULONG thread_input) {
     uint32_t ticks_duty_cycle = (thread_input * 100) / 2;  // thread_input is in seconds, 100 ticks/second
+    uint8_t max_aps = 10;
+    if (WIFI_Init() != WIFI_STATUS_OK)
+        return;
+//    WIFI_APs_t aps;
+//    WIFI_Status_t networks = WIFI_ListAccessPoints(&aps, max_aps);
+//    printf("%d", aps.count);
     while (1) {
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
         tx_thread_sleep(ticks_duty_cycle);  // this is in ticks, which is default 100 per second.
@@ -235,6 +254,7 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USART3_UART_Init();
   MX_USB_OTG_FS_USB_Init();
+  MX_RNG_Init();
   /* USER CODE BEGIN 2 */
   tx_kernel_enter();
   /* USER CODE END 2 */
@@ -306,7 +326,8 @@ void SystemClock_Config(void)
                               |RCC_PERIPHCLK_USART3|RCC_PERIPHCLK_UART4
                               |RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_I2C2
                               |RCC_PERIPHCLK_DFSDM1|RCC_PERIPHCLK_USB
-                              |RCC_PERIPHCLK_ADC|RCC_PERIPHCLK_OSPI;
+                              |RCC_PERIPHCLK_RNG|RCC_PERIPHCLK_ADC
+                              |RCC_PERIPHCLK_OSPI;
   PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
   PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
   PeriphClkInit.Usart3ClockSelection = RCC_USART3CLKSOURCE_PCLK1;
@@ -317,6 +338,7 @@ void SystemClock_Config(void)
   PeriphClkInit.Dfsdm1ClockSelection = RCC_DFSDM1CLKSOURCE_PCLK;
   PeriphClkInit.OspiClockSelection = RCC_OSPICLKSOURCE_SYSCLK;
   PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLLSAI1;
+  PeriphClkInit.RngClockSelection = RCC_RNGCLKSOURCE_PLLSAI1;
   PeriphClkInit.PLLSAI1.PLLSAI1Source = RCC_PLLSOURCE_MSI;
   PeriphClkInit.PLLSAI1.PLLSAI1M = 1;
   PeriphClkInit.PLLSAI1.PLLSAI1N = 24;

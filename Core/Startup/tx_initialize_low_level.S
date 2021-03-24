@@ -207,15 +207,13 @@ __tx_IntHandler:
 
 @ /* System Tick timer interrupt handler */
     .global  __tx_SysTickHandler
-/*    .global  SysTick_Handler */
+    .global  SysTick_Handler
     .thumb_func
 __tx_SysTickHandler:
-/*
-SysTick_Handler:
-;@ VOID TimerInterruptHandler (VOID)
-;@ {
-;@
-*/
+/* SysTick_Handler: */
+@ VOID TimerInterruptHandler (VOID)
+@ {
+@
     PUSH    {r0, lr}
 #ifdef TX_ENABLE_EXECUTION_CHANGE_NOTIFY
     BL      _tx_execution_isr_enter             @ Call the ISR enter function
@@ -226,7 +224,7 @@ SysTick_Handler:
 #endif
     POP     {r0, lr}
     BX      LR
-/* @ } */
+@ }
 
 
 @ /* NMI, DBG handlers */

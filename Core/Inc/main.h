@@ -164,8 +164,6 @@ void Error_Handler(void);
 #define LSM3MDL_DRDY_EXTI8_Pin GPIO_PIN_8
 #define LSM3MDL_DRDY_EXTI8_GPIO_Port GPIOC
 #define LSM3MDL_DRDY_EXTI8_EXTI_IRQn EXTI9_5_IRQn
-#define LED3_WIFI__LED4_BLE_Pin GPIO_PIN_9
-#define LED3_WIFI__LED4_BLE_GPIO_Port GPIOC
 #define SPBTLE_RF_RST_Pin GPIO_PIN_8
 #define SPBTLE_RF_RST_GPIO_Port GPIOA
 #define USB_OTG_FS_VBUS_Pin GPIO_PIN_9
@@ -222,8 +220,10 @@ void Error_Handler(void);
 #define ISM43362_SPI3_CSN_GPIO_Port GPIOE
 #define ISM43362_DRDY_EXTI1_Pin GPIO_PIN_1
 #define ISM43362_DRDY_EXTI1_GPIO_Port GPIOE
+#define ISM43362_DRDY_EXTI1_EXTI_IRQn EXTI1_IRQn
 /* USER CODE BEGIN Private defines */
-
+extern  SPI_HandleTypeDef hspi;
+void SPI3_IRQHandler(void);
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
