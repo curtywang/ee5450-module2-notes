@@ -17,6 +17,7 @@ set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 set(CMAKE_MAKE_PROGRAM ${CMAKE_SOURCE_DIR}/threadx/cmake/ninja CACHE STRING "Ninja location")
 set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/threadx/cmake/cortex_m4.cmake)
 include(threadx/cmake/utilities.cmake)
+include(netxduo/cmake/utilities.cmake)
 
 set(TX_USER_FILE "${CMAKE_SOURCE_DIR}/Core/Inc/tx_user.h" CACHE STRING "Enable TX user configuration")
 
@@ -53,10 +54,14 @@ else ()
     add_compile_options(-Og -g)
 endif ()
 
-include_directories(Core/Inc Drivers/STM32L4xx_HAL_Driver/Inc Drivers/STM32L4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32L4xx/Include Drivers/CMSIS/Include Drivers/BSP/B-L4S5I-IOT01)
+include_directories(Core/Inc Drivers/STM32L4xx_HAL_Driver/Inc Drivers/STM32L4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32L4xx/Include Drivers/CMSIS/Include
+                    Drivers/BSP/B-L4S5I-IOT01
+                    Drivers/WiFi/Inc)
 
 # include ThreadX subdirectories
 add_subdirectory(${CMAKE_SOURCE_DIR}/threadx threadx)
+set(NXD_ENABLE_FILE_SERVERS CACHE BOOL false)
+add_subdirectory(${CMAKE_SOURCE_DIR}/netxduo netxduo)
 
 add_definitions(-DUSE_HAL_DRIVER -DDEBUG -DSTM32L4S5xx)
 
@@ -74,7 +79,8 @@ set(HEX_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex)
 set(BIN_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.bin)
 
 target_link_libraries(${PROJECT_NAME}.elf
-        azrtos::threadx)
+        azrtos::threadx
+        azrtos::netxduo)
 
 add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
         COMMAND ${CMAKE_OBJCOPY} -Oihex $<TARGET_FILE:${PROJECT_NAME}.elf> ${HEX_FILE}

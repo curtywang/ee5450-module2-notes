@@ -61,6 +61,7 @@
 TX_THREAD thread_0;
 TX_THREAD thread_1;
 TX_THREAD thread_2;
+TX_THREAD thread_3;
 TX_BYTE_POOL byte_pool_0;
 TX_MUTEX mtx_led;
 TX_EVENT_FLAGS_GROUP event_flags_0;
@@ -120,6 +121,13 @@ void tx_application_define(void* first_unused_memory) {
 
     tx_byte_allocate(&byte_pool_0, (VOID **) &pointer, STACK_SIZE, TX_NO_WAIT);
     status = tx_thread_create(&thread_2, "thread 2", read_temperature_sensor, 2,
+                              pointer, STACK_SIZE,
+                              1, 1, TX_NO_TIME_SLICE, TX_AUTO_START);
+    if (status != TX_SUCCESS)
+        printf("thread creation failed\r\n");
+
+    tx_byte_allocate(&byte_pool_0, (VOID **) &pointer, STACK_SIZE, TX_NO_WAIT);
+    status = tx_thread_create(&thread_3, "thread 3", read_accelerometer, 1,
                               pointer, STACK_SIZE,
                               1, 1, TX_NO_TIME_SLICE, TX_AUTO_START);
     if (status != TX_SUCCESS)
