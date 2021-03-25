@@ -239,6 +239,7 @@ void setup_nx_mqtt_and_connect() {
 }
 
 void send_nx_mqtt_message() {
+    // TODO: change message to insert current ticks
     nxd_mqtt_client_publish(&mqtt_client,
                             "test", sizeof("test") - 1,
                             "hello from board", sizeof("hello from board") - 1,
