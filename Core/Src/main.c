@@ -33,10 +33,13 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include "tx_api.h"
+#include "nx_api.h"
+#include "nx_wifi.h"
 #include "cmsis_utils.h"
 #include "stm32l4s5i_iot01_accelero.h"
 #include "stm32l4s5i_iot01_tsensor.h"
 #include "wifi.h"
+#include "nxd_mqtt_client.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -56,21 +59,36 @@
 #define BLOCK_POOL_SIZE 100
 #define QUEUE_SIZE 100
 #define EVT_BUTTON_PRESSED 0x1
+
+#define WIFI_AP_SSID "Hello Home"
+#define WIFI_AP_KEY "TaiwanNumbaOne"
+#define TX_PACKET_COUNT 20
+#define TX_PACKET_SIZE 1200  // default payload size from ES_WIFI_PAYLOAD_SIZE
+#define TX_POOL_SIZE ((TX_PACKET_SIZE + sizeof(NX_PACKET)) * TX_PACKET_COUNT)
+#define MQTT_BROKER_IP IP_ADDRESS(192, 168, 11, 125)
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-TX_THREAD thread_0;
-TX_THREAD thread_1;
-TX_THREAD thread_2;
-TX_THREAD thread_3;
+TX_THREAD threads[5];
 TX_BYTE_POOL byte_pool_0;
 TX_MUTEX mtx_led;
 TX_EVENT_FLAGS_GROUP event_flags_0;
 TX_BLOCK_POOL block_pool_0;
 UCHAR memory_area[BYTE_POOL_SIZE];
 
+NX_IP nx_ip;
+NX_PACKET_POOL nx_pool;
+static UCHAR nx_ip_pool[TX_POOL_SIZE];
+NXD_ADDRESS mqtt_server_ip;
+static ULONG mqtt_client_stack[STACK_SIZE / sizeof(ULONG)];
+static NXD_MQTT_CLIENT mqtt_client;
+TX_EVENT_FLAGS_GROUP mqtt_event_flags;
+static UCHAR mqtt_buffer_message[NXD_MQTT_MAX_MESSAGE_LENGTH];
+static UCHAR mqtt_buffer_topic[NXD_MQTT_MAX_TOPIC_NAME_LENGTH];
+
+_Noreturn void network_test(ULONG thread_input);
 _Noreturn void blink_PA_5(ULONG thread_input);
 _Noreturn void blink_PB_14(ULONG thread_input);
 _Noreturn void read_temperature_sensor(ULONG thread_input);
@@ -103,7 +121,6 @@ void SPI3_IRQHandler(void)
     HAL_SPI_IRQHandler(&hspi);
 }
 
-
 /**
  * @brief function for defining the ThreadX application
  * @param first_unused_memory
@@ -119,32 +136,128 @@ void tx_application_define(void* first_unused_memory) {
     tx_byte_pool_create(&byte_pool_0, "byte pool 0", memory_area, BYTE_POOL_SIZE);
 
     tx_byte_allocate(&byte_pool_0, (VOID **) &pointer, STACK_SIZE, TX_NO_WAIT);
-    status = tx_thread_create(&thread_0, "thread 0", blink_PA_5, 1,
+    status = tx_thread_create(&threads[4], "thread net test", network_test, 1,
                               pointer, STACK_SIZE,
                               1, 1, TX_NO_TIME_SLICE, TX_AUTO_START);
     if (status != TX_SUCCESS)
         printf("thread creation failed\r\n");
 
     tx_byte_allocate(&byte_pool_0, (VOID **) &pointer, STACK_SIZE, TX_NO_WAIT);
-    status = tx_thread_create(&thread_1, "thread 1", blink_PB_14, 2,
+    status = tx_thread_create(&threads[0], "thread 0", blink_PA_5, 1,
                               pointer, STACK_SIZE,
                               1, 1, TX_NO_TIME_SLICE, TX_AUTO_START);
     if (status != TX_SUCCESS)
         printf("thread creation failed\r\n");
 
     tx_byte_allocate(&byte_pool_0, (VOID **) &pointer, STACK_SIZE, TX_NO_WAIT);
-    status = tx_thread_create(&thread_2, "thread 2", read_temperature_sensor, 2,
+    status = tx_thread_create(&threads[1], "thread 1", blink_PB_14, 2,
                               pointer, STACK_SIZE,
                               1, 1, TX_NO_TIME_SLICE, TX_AUTO_START);
     if (status != TX_SUCCESS)
         printf("thread creation failed\r\n");
 
     tx_byte_allocate(&byte_pool_0, (VOID **) &pointer, STACK_SIZE, TX_NO_WAIT);
-    status = tx_thread_create(&thread_3, "thread 3", read_accelerometer, 1,
+    status = tx_thread_create(&threads[2], "thread 2", read_temperature_sensor, 2,
                               pointer, STACK_SIZE,
                               1, 1, TX_NO_TIME_SLICE, TX_AUTO_START);
     if (status != TX_SUCCESS)
         printf("thread creation failed\r\n");
+
+    tx_byte_allocate(&byte_pool_0, (VOID **) &pointer, STACK_SIZE, TX_NO_WAIT);
+    status = tx_thread_create(&threads[3], "thread 3", read_accelerometer, 1,
+                              pointer, STACK_SIZE,
+                              1, 1, TX_NO_TIME_SLICE, TX_AUTO_START);
+    if (status != TX_SUCCESS)
+        printf("thread creation failed\r\n");
+}
+
+/**
+ * @brief setup the wifi (uses global variables in wifi.h; configures SPI3 Inventek module)
+ */
+void setup_wifi() {
+    uint8_t max_aps = 10;
+    if (WIFI_Init() != WIFI_STATUS_OK)
+        return;
+    WIFI_APs_t aps;
+    while (WIFI_ListAccessPoints(&aps, max_aps) != WIFI_STATUS_OK) {
+        tx_thread_sleep(100);
+    }
+    printf("%d", aps.count);
+    while (WIFI_Connect(WIFI_AP_SSID, WIFI_AP_KEY, WIFI_ECN_WPA2_PSK) != WIFI_STATUS_OK) {
+        tx_thread_sleep(100);
+    }
+    uint8_t goog_ip[] = {8, 8, 8, 8};
+    uint16_t ping_count = 10;
+    int32_t ping_result[ping_count];
+    while (WIFI_Ping(goog_ip, ping_count, 10, ping_result) != WIFI_STATUS_OK) {
+        tx_thread_sleep(100);
+    }
+    printf("%ld", ping_result[0]);
+}
+
+/**
+ * @brief setup NetX Duo
+ */
+void setup_nx_wifi() {
+    UINT status;
+    uint8_t ip_address[4];
+    nx_system_initialize();
+    status = nx_packet_pool_create(&nx_pool, "NX Packet Pool", TX_PACKET_SIZE, nx_ip_pool, TX_POOL_SIZE);
+    if (status != NX_SUCCESS) {
+        printf("%d", status);
+        return;
+    }
+    WIFI_GetIP_Address(ip_address);
+    status = nx_ip_create(&nx_ip, "NX IP Instance 0",
+                          IP_ADDRESS(ip_address[0], ip_address[1], ip_address[2], ip_address[3]),
+                          0xFFFFFF00UL,
+                          &nx_pool, NULL, NULL, 0, 0);
+    if (status != NX_SUCCESS) {
+        printf("%d", status);
+        return;
+    }
+    status = nx_wifi_initialize(&nx_ip, &nx_pool);
+    if (status != NX_SUCCESS) {
+        printf("%d", status);
+        return;
+    }
+}
+
+void setup_nx_mqtt_and_connect() {
+    UINT status;
+    status = nxd_mqtt_client_create(&mqtt_client, "MQTT Client", "le_board", sizeof("le_board") - 1,
+                           &nx_ip, &nx_pool, (void*)mqtt_client_stack, sizeof(mqtt_client_stack),
+                           2, NX_NULL, 0);
+    printf("%d", status);
+    tx_event_flags_create(&mqtt_event_flags, "mqtt events");
+
+    mqtt_server_ip.nxd_ip_version = 4;
+    mqtt_server_ip.nxd_ip_address.v4 = MQTT_BROKER_IP;
+    status = nxd_mqtt_client_connect(&mqtt_client, &mqtt_server_ip, NXD_MQTT_PORT,
+                                     300, 0, NX_WAIT_FOREVER);
+    printf("%d", status);
+}
+
+void send_nx_mqtt_message() {
+    nxd_mqtt_client_publish(&mqtt_client,
+                            "test", sizeof("test") - 1,
+                            "hello from board", sizeof("hello from board") - 1,
+                            0, 1, NX_WAIT_FOREVER);
+}
+
+/**
+ * @brief test the network by connecting to the Wifi network and using nxduo to send MQTT
+ * @param thread_input: interval in seconds to send test message
+ */
+_Noreturn void network_test(ULONG thread_input) {
+    uint32_t tick_interval = 100 * thread_input;
+    setup_wifi();
+    setup_nx_wifi();
+    setup_nx_mqtt_and_connect();
+    while (1) {
+        send_nx_mqtt_message();
+        tx_thread_sleep(tick_interval);
+    }
 }
 
 /**
@@ -153,21 +266,6 @@ void tx_application_define(void* first_unused_memory) {
  */
 _Noreturn void blink_PA_5(ULONG thread_input) {
     uint32_t ticks_duty_cycle = (thread_input * 100) / 2;  // thread_input is in seconds, 100 ticks/second
-    uint8_t max_aps = 10;
-    volatile WIFI_Status_t wifi_status;
-    if (WIFI_Init() != WIFI_STATUS_OK)
-        return;
-    WIFI_APs_t aps;
-    wifi_status = WIFI_ListAccessPoints(&aps, max_aps);
-    printf("%d", aps.count);
-    while (WIFI_Connect("Hello Home", "TaiwanNumbaOne", WIFI_ECN_WPA2_PSK) != WIFI_STATUS_OK) {
-        tx_thread_sleep(100);
-    }
-    uint8_t goog_ip[] = {8, 8, 8, 8};
-    uint16_t ping_count = 10;
-    int32_t ping_result[ping_count];
-    wifi_status = WIFI_Ping(goog_ip, ping_count, 10, ping_result);
-    printf("%ld", ping_result[0]);
     while (1) {
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
         tx_thread_sleep(ticks_duty_cycle);  // this is in ticks, which is default 100 per second.

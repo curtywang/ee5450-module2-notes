@@ -9,8 +9,6 @@
 /*                                                                        */
 /**************************************************************************/
 
-#include <asc_config.h>
-
 #include "nx_api.h"
 #include "asc_security_core/utils/irand.h"
 

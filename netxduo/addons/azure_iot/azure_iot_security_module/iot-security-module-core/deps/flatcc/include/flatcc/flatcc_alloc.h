@@ -1,6 +1,5 @@
 #ifndef FLATCC_ALLOC_H
 #define FLATCC_ALLOC_H
-#include <asc_config.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,14 +46,15 @@ extern "C" {
 #include <stdlib.h>
 
 /* ASC Disable memory allocation usage */
-#ifdef ASC_SERIALIZER_USE_CUSTOM_ALLOCATOR
 #define FLATCC_ALLOC(n) NULL
 #define FLATCC_FREE(p) NULL
 #define FLATCC_REALLOC(p,n) NULL
 #define FLATCC_CALLOC(nm,n) NULL
 #define FLATCC_ALIGNED_ALLOC(a,n) NULL
 #define FLATCC_ALIGNED_FREE(p) NULL
-#endif /* ASC_SERIALIZER_USE_CUSTOM_ALLOCATOR */
+#ifndef FLATCC_USE_GENERIC_ALIGNED_ALLOC
+#define FLATCC_USE_GENERIC_ALIGNED_ALLOC
+#endif
 
 #ifndef FLATCC_ALLOC
 #define FLATCC_ALLOC(n) malloc(n)

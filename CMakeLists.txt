@@ -20,6 +20,7 @@ include(threadx/cmake/utilities.cmake)
 include(netxduo/cmake/utilities.cmake)
 
 set(TX_USER_FILE "${CMAKE_SOURCE_DIR}/Core/Inc/tx_user.h" CACHE STRING "Enable TX user configuration")
+set(NX_USER_FILE "${CMAKE_SOURCE_DIR}/Core/Inc/nx_user.h" CACHE STRING "Enable NX user configuration")
 
 # project settings
 project(ee5450-module2-hw0 C CXX ASM)
@@ -61,7 +62,7 @@ include_directories(Core/Inc Drivers/STM32L4xx_HAL_Driver/Inc Drivers/STM32L4xx_
 # include ThreadX subdirectories
 add_subdirectory(${CMAKE_SOURCE_DIR}/threadx threadx)
 set(NXD_ENABLE_FILE_SERVERS CACHE BOOL false)
-add_subdirectory(${CMAKE_SOURCE_DIR}/netxduo netxduo)
+add_subdirectory(${CMAKE_SOURCE_DIR}/netxduo_stm32l4 netxduo_stm32l4)
 
 add_definitions(-DUSE_HAL_DRIVER -DDEBUG -DSTM32L4S5xx)
 

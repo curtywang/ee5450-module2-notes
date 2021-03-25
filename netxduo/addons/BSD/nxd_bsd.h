@@ -25,7 +25,7 @@
 /*  BSD DEFINITIONS                                        RELEASE        */ 
 /*                                                                        */ 
 /*    nxd_bsd.h                                           PORTABLE C      */ 
-/*                                                           6.1.5        */
+/*                                                           6.1          */
 /*  AUTHOR                                                                */
 /*                                                                        */
 /*    Yuxin Zhou, Microsoft Corporation                                   */
@@ -43,9 +43,6 @@
 /*  05-19-2020     Yuxin Zhou               Initial Version 6.0           */
 /*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
 /*                                            resulting in version 6.1    */
-/*  03-02-2021     Yuxin Zhou               Modified comment(s), and      */
-/*                                            fixed compiler warnings,    */
-/*                                            resulting in version 6.1.5  */
 /*                                                                        */
 /**************************************************************************/
 
@@ -501,13 +498,11 @@ extern   "C" {
 
 typedef LONG        suseconds_t;  
 
-#ifndef __SES_ARM
 struct timeval
 {
     time_t          tv_sec;             /* Seconds      */
     suseconds_t     tv_usec;            /* Microseconds */
 };
-#endif /* __SES_ARM */
 
 struct sockaddr_storage 
 {
