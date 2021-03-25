@@ -154,11 +154,20 @@ void tx_application_define(void* first_unused_memory) {
 _Noreturn void blink_PA_5(ULONG thread_input) {
     uint32_t ticks_duty_cycle = (thread_input * 100) / 2;  // thread_input is in seconds, 100 ticks/second
     uint8_t max_aps = 10;
+    volatile WIFI_Status_t wifi_status;
     if (WIFI_Init() != WIFI_STATUS_OK)
         return;
-//    WIFI_APs_t aps;
-//    WIFI_Status_t networks = WIFI_ListAccessPoints(&aps, max_aps);
-//    printf("%d", aps.count);
+    WIFI_APs_t aps;
+    wifi_status = WIFI_ListAccessPoints(&aps, max_aps);
+    printf("%d", aps.count);
+    while (WIFI_Connect("Hello Home", "TaiwanNumbaOne", WIFI_ECN_WPA2_PSK) != WIFI_STATUS_OK) {
+        tx_thread_sleep(100);
+    }
+    uint8_t goog_ip[] = {8, 8, 8, 8};
+    uint16_t ping_count = 10;
+    int32_t ping_result[ping_count];
+    wifi_status = WIFI_Ping(goog_ip, ping_count, 10, ping_result);
+    printf("%ld", ping_result[0]);
     while (1) {
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
         tx_thread_sleep(ticks_duty_cycle);  // this is in ticks, which is default 100 per second.

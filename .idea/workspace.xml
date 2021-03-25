@@ -17,19 +17,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a8530759-449d-4624-b9d3-1183016fe538" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/Core/Inc/cmsis_utils.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.cproject" beforeDir="false" afterPath="$PROJECT_DIR$/.cproject" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.mxproject" beforeDir="false" afterPath="$PROJECT_DIR$/.mxproject" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Core/Inc/main.h" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Inc/main.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Core/Inc/stm32l4xx_hal_conf.h" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Inc/stm32l4xx_hal_conf.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Core/Inc/stm32l4xx_it.h" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Inc/stm32l4xx_it.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Core/Src/gpio.c" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Src/gpio.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Core/Src/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Src/main.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Core/Src/stm32l4xx_it.c" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Src/stm32l4xx_it.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Core/Startup/tx_initialize_low_level.S" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Startup/tx_initialize_low_level.S" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Drivers/WiFi/Inc/es_wifi_conf_template.h" beforeDir="false" afterPath="$PROJECT_DIR$/Drivers/WiFi/es_wifi_conf_template.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ee5450-module2-notes.ioc" beforeDir="false" afterPath="$PROJECT_DIR$/ee5450-module2-notes.ioc" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -84,6 +73,7 @@
       <recent name="C:\Users\curty\GitHub\ee5450-module2-notes\Drivers\BSP" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\curty\GitHub\ee5450-module2-notes\Drivers\WiFi\Inc" />
       <recent name="C:\Users\curty\GitHub\ee5450-module2-notes\Drivers\WiFi" />
       <recent name="C:\Users\curty\GitHub\ee5450-module2-notes\Core\Src" />
       <recent name="C:\Users\curty\GitHub\ee5450-module2-notes\Drivers\WiFi\Common\Inc" />
@@ -132,7 +122,7 @@
       <updated>1615495402313</updated>
       <workItem from="1615495426818" duration="11560000" />
       <workItem from="1615936195325" duration="1508000" />
-      <workItem from="1616105918615" duration="26912000" />
+      <workItem from="1616105918615" duration="31803000" />
     </task>
     <servers />
   </component>
@@ -150,6 +140,22 @@
       </map>
     </option>
     <option name="oldMeFiltersMigrated" value="true" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/Core/Src/main.c</url>
+          <line>162</line>
+          <option name="timeStamp" value="31" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/Core/Src/main.c</url>
+          <line>168</line>
+          <option name="timeStamp" value="32" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
