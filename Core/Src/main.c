@@ -477,6 +477,7 @@ _Noreturn void thread_temperature(ULONG global_data_ulong) {
     ULONG actual_flags;
     struct global_data_t* global_data = (struct global_data_t*)global_data_ulong;
     uint32_t period_ticks = global_data->interval_temperature * 100;
+
     const size_t message_size = 40;
     char message[message_size + 1];
     const size_t topic_size = 30;
@@ -484,8 +485,10 @@ _Noreturn void thread_temperature(ULONG global_data_ulong) {
     memset(topic, 0, topic_size + 1);
     memset(message, 0, message_size + 1);
     snprintf(topic, topic_size, "board_test/temperature");
+
     BSP_TSENSOR_Init();
     tx_event_flags_get(&global_event_flags, EVT_WIFI_READY, TX_AND, &actual_flags, TX_WAIT_FOREVER);
+
     while (1) {
         get_temperature_message(global_data, message, message_size);
         status = send_nx_mqtt_message(global_data, topic, message);
@@ -523,6 +526,7 @@ _Noreturn void thread_accelerometer(ULONG global_data_ulong) {
     ULONG actual_flags;
     struct global_data_t* global_data = (struct global_data_t*)global_data_ulong;
     uint32_t period_ticks = (global_data->interval_accelerometer * 100);
+
     const size_t message_size = 40;
     char message[message_size + 1];
     const size_t topic_size = 30;
@@ -530,10 +534,12 @@ _Noreturn void thread_accelerometer(ULONG global_data_ulong) {
     memset(topic, 0, topic_size + 1);
     memset(message, 0, message_size + 1);
     snprintf(topic, topic_size, "board_test/accelerometer");
+
     ACCELERO_StatusTypeDef xl_status = BSP_ACCELERO_Init();
     if (xl_status != ACCELERO_OK)
         printf("ERROR!");
     tx_event_flags_get(&global_event_flags, EVT_WIFI_READY, TX_AND, &actual_flags, TX_WAIT_FOREVER);
+
     while (1) {
         get_accelerometer_message(global_data, message, message_size);
         status = send_nx_mqtt_message(global_data, topic, message);
